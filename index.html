@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Benford's Law Explorer</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #ffffff;
+    --bg2: #f7f7f5;
+    --bg3: #f0efed;
+    --border: #e5e4e0;
+    --text: #1a1917;
+    --text2: #6b6860;
+    --text3: #a09e9a;
+    --accent: #1a1917;
+    --blue: #2563eb;
+    --green: #16a34a;
+    --red: #dc2626;
+    --amber: #d97706;
+    --radius: 10px;
+    --font: 'Inter', system-ui, sans-serif;
+    --font-serif: 'DM Serif Display', Georgia, serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141413;
+      --bg2: #1c1b1a;
+      --bg3: #242320;
+      --border: #2e2d2a;
+      --text: #f0efe9;
+      --text2: #9b9890;
+      --text3: #5c5a56;
+      --blue: #60a5fa;
+      --green: #4ade80;
+      --red: #f87171;
+      --amber: #fbbf24;
+    }
+  }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+  }
+
+  /* Header */
+  .header {
+    padding: 56px 0 40px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 40px;
+  }
+
+  .header-eyebrow {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text3);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .header h1 {
+    font-family: var(--font-serif);
+    font-size: 2.6rem;
+    font-weight: 400;
+    line-height: 1.15;
+    color: var(--text);
+    margin-bottom: 14px;
+  }
+
+  .header p {
+    font-size: 14px;
+    color: var(--text2);
+    max-width: 500px;
+    line-height: 1.7;
+  }
+
+  .header p code {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 12px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    padding: 1px 5px;
+    border-radius: 4px;
+    color: var(--text);
+  }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 2px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 3px;
+    width: fit-content;
+    margin-bottom: 32px;
+  }
+
+  .tab {
+    padding: 7px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: var(--font);
+    background: transparent;
+    border: none;
+    border-radius: 7px;
+    cursor: pointer;
+    color: var(--text2);
+    transition: all 0.15s;
+  }
+
+  .tab.active {
+    background: var(--bg);
+    color: var(--text);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+
+  .tab:not(.active):hover { color: var(--text); }
+
+  /* Panels */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* Form */
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .form-row.single { grid-template-columns: 1fr; }
+  .form-row.triple { grid-template-columns: 1fr 1fr 1fr; }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .field.span2 { grid-column: span 2; }
+
+  label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text2);
+  }
+
+  input, select, textarea {
+    font-family: var(--font);
+    font-size: 13px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 7px;
+    padding: 8px 11px;
+    outline: none;
+    transition: border-color 0.15s;
+    width: 100%;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--text3);
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 90px;
+    line-height: 1.6;
+  }
+
+  select { cursor: pointer; }
+
+  /* Conditional op fields */
+  .op-fields { display: none; }
+  .op-fields.visible { display: contents; }
+
+  /* Divider */
+  .form-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 20px 0;
+  }
+
+  /* Button */
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 20px;
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 500;
+    background: var(--text);
+    color: var(--bg);
+    border: none;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    margin-top: 8px;
+  }
+
+  .btn-primary:hover { opacity: 0.82; }
+  .btn-primary:active { opacity: 0.7; }
+
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    font-family: var(--font);
+    font-size: 12px;
+    font-weight: 500;
+    background: var(--bg2);
+    color: var(--text2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-decoration: none;
+  }
+
+  .btn-secondary:hover {
+    background: var(--bg3);
+    color: var(--text);
+  }
+
+  /* Loading */
+  .loading {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 0;
+    font-size: 12px;
+    color: var(--text3);
+  }
+
+  .loading.visible { display: flex; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .spinner {
+    width: 14px;
+    height: 14px;
+    border: 1.5px solid var(--border);
+    border-top-color: var(--text2);
+    border-radius: 50%;
+    animation: spin 0.65s linear infinite;
+  }
+
+  /* Error */
+  .error {
+    display: none;
+    margin-top: 10px;
+    padding: 10px 14px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 7px;
+    font-size: 12px;
+    color: #b91c1c;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .error { background: #1f1212; border-color: #7f1d1d; color: #fca5a5; }
+  }
+
+  .error.visible { display: block; }
+
+  /* Results */
+  #results {
+    display: none;
+    margin-top: 48px;
+  }
+
+  #results.visible {
+    display: block;
+    animation: rise 0.3s ease;
+  }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .results-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+
+  .results-title {
+    font-family: var(--font-serif);
+    font-size: 1.25rem;
+    font-weight: 400;
+  }
+
+  .results-meta {
+    font-size: 12px;
+    color: var(--text3);
+  }
+
+  /* Stat cards */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+
+  .stat {
+    background: var(--bg2);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+  }
+
+  .stat-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+  }
+
+  .stat-value {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.2;
+  }
+
+  .stat-value.good { color: var(--green); }
+  .stat-value.warn { color: var(--amber); }
+  .stat-value.poor { color: var(--red); }
+
+  /* Chart */
+  .chart-card {
+    background: var(--bg2);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+    overflow-x: auto;
+  }
+
+  .chart-inner { min-width: 360px; }
+
+  /* Table */
+  .table-card {
+    background: var(--bg2);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  thead {
+    background: var(--bg3);
+    border-bottom: 1px solid var(--border);
+  }
+
+  th {
+    padding: 9px 14px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  td {
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--border);
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg3); }
+
+  .td-digit {
+    font-weight: 600;
+    font-size: 13px;
+  }
+
+  .diff-over { color: var(--red); }
+  .diff-under { color: var(--green); }
+  .diff-near { color: var(--text3); }
+
+  /* Mini bar */
+  .bars { display: flex; flex-direction: column; gap: 2px; min-width: 80px; }
+
+  .bar-row { display: flex; align-items: center; gap: 5px; }
+
+  .bar-track {
+    flex: 1;
+    height: 4px;
+    background: var(--bg3);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.5s ease;
+  }
+
+  .bar-actual { background: var(--blue); }
+  .bar-benford { background: var(--text3); }
+
+  /* Data list section */
+  .data-section {
+    margin-top: 16px;
+  }
+
+  .data-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .data-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text2);
+  }
+
+  .data-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  .data-list-wrap {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    max-height: 200px;
+    overflow-y: auto;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 12px;
+    color: var(--text2);
+    line-height: 1.8;
+    word-break: break-all;
+    display: none;
+  }
+
+  .data-list-wrap.visible { display: block; }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: var(--text2);
+  }
+
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+  }
+
+  @media (max-width: 580px) {
+    .form-row { grid-template-columns: 1fr; }
+    .form-row.triple { grid-template-columns: 1fr 1fr; }
+    .stats { grid-template-columns: 1fr 1fr; }
+    .stats .stat:last-child { grid-column: span 2; }
+    .field.span2 { grid-column: span 1; }
+    .header h1 { font-size: 2rem; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="header">
+    <div class="header-eyebrow">Statistical Phenomenon</div>
+    <h1>Benford's Law<br>Explorer</h1>
+    <p>Analyze leading digit distributions against the first-digit law: <code>P(d) = log_b(1 + 1/d)</code>. Paste real-world data or generate numbers with arithmetic operations.</p>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchMode('manual')">Manual input</button>
+    <button class="tab" onclick="switchMode('generated')">Generate numbers</button>
+  </div>
+
+  <!-- Manual panel -->
+  <div id="panel-manual" class="panel active">
+    <div class="form-row single">
+      <div class="field">
+        <label>Numbers — space or newline separated</label>
+        <textarea id="m-nums" placeholder="1284 5672 89012 345 7810 932 ..."></textarea>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="field">
+        <label>Numeric base</label>
+        <select id="m-base" onchange="toggleCustomBase('m')">
+          <option value="10">Base 10 (decimal)</option>
+          <option value="2">Base 2 (binary)</option>
+          <option value="8">Base 8 (octal)</option>
+          <option value="16">Base 16 (hex)</option>
+          <option value="custom">Custom…</option>
+        </select>
+      </div>
+      <div class="field" id="m-custom-wrap" style="display:none">
+        <label>Custom base (2–36)</label>
+        <input type="number" id="m-custom-base" min="2" max="36" value="12">
+      </div>
+      <div class="field">
+        <label>Multiply all values by</label>
+        <input type="number" id="m-scalar" value="1" step="any" placeholder="1">
+      </div>
+    </div>
+    <button class="btn-primary" onclick="runManual()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 3l14 9-14 9V3z"/></svg>
+      Analyze
+    </button>
+    <div class="error" id="m-error"></div>
+  </div>
+
+  <!-- Generated panel -->
+  <div id="panel-generated" class="panel">
+    <div class="form-row triple">
+      <div class="field">
+        <label>Min value</label>
+        <input type="number" id="g-min" value="1" min="1">
+      </div>
+      <div class="field">
+        <label>Max value</label>
+        <input type="number" id="g-max" value="10000">
+      </div>
+      <div class="field">
+        <label>Count</label>
+        <input type="number" id="g-count" value="1000" min="10" max="100000">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="field">
+        <label>Numeric base</label>
+        <select id="g-base" onchange="toggleCustomBase('g')">
+          <option value="10">Base 10 (decimal)</option>
+          <option value="2">Base 2 (binary)</option>
+          <option value="8">Base 8 (octal)</option>
+          <option value="16">Base 16 (hex)</option>
+          <option value="custom">Custom…</option>
+        </select>
+      </div>
+      <div class="field" id="g-custom-wrap" style="display:none">
+        <label>Custom base (2–36)</label>
+        <input type="number" id="g-custom-base" min="2" max="36" value="12">
+      </div>
+      <div class="field">
+        <label>Operation</label>
+        <select id="g-op" onchange="updateOpFields()">
+          <option value="none">None (pure random)</option>
+          <option value="add">Addition</option>
+          <option value="subtract">Subtraction</option>
+          <option value="multiply">Multiplication</option>
+          <option value="divide">Division</option>
+          <option value="exponent">Exponentiation</option>
+          <option value="root">Root</option>
+          <option value="log">Logarithm</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row" id="op-add" style="display:none">
+      <div class="field"><label>Min addends</label><input type="number" id="add-lo" value="2" min="1"></div>
+      <div class="field"><label>Max addends</label><input type="number" id="add-hi" value="5" min="1"></div>
+    </div>
+    <div class="form-row" id="op-subtract" style="display:none">
+      <div class="field"><label>Min subtrahends</label><input type="number" id="sub-lo" value="1" min="1"></div>
+      <div class="field"><label>Max subtrahends</label><input type="number" id="sub-hi" value="3" min="1"></div>
+    </div>
+    <div class="form-row" id="op-multiply" style="display:none">
+      <div class="field"><label>Min factors</label><input type="number" id="mul-lo" value="2" min="1"></div>
+      <div class="field"><label>Max factors</label><input type="number" id="mul-hi" value="10" min="1"></div>
+    </div>
+    <div class="form-row" id="op-divide" style="display:none">
+      <div class="field"><label>Min divisors</label><input type="number" id="div-lo" value="1" min="1"></div>
+      <div class="field"><label>Max divisors</label><input type="number" id="div-hi" value="3" min="1"></div>
+      <div class="field"><label>Divisor min</label><input type="number" id="div-vlo" value="2" min="1"></div>
+      <div class="field"><label>Divisor max</label><input type="number" id="div-vhi" value="9" min="1"></div>
+    </div>
+    <div class="form-row" id="op-exponent" style="display:none">
+      <div class="field"><label>Min exponent</label><input type="number" id="exp-lo" value="2" min="1"></div>
+      <div class="field"><label>Max exponent</label><input type="number" id="exp-hi" value="6" min="1"></div>
+    </div>
+    <div class="form-row" id="op-root" style="display:none">
+      <div class="field"><label>Min root</label><input type="number" id="root-lo" value="2" min="1"></div>
+      <div class="field"><label>Max root</label><input type="number" id="root-hi" value="5" min="1"></div>
+    </div>
+    <div class="form-row" id="op-log" style="display:none">
+      <div class="field"><label>Min log base</label><input type="number" id="log-lo" value="2" min="2"></div>
+      <div class="field"><label>Max log base</label><input type="number" id="log-hi" value="10" min="2"></div>
+    </div>
+
+    <div class="loading" id="g-loading"><div class="spinner"></div> Generating numbers…</div>
+    <button class="btn-primary" onclick="runGenerated()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 3l14 9-14 9V3z"/></svg>
+      Generate & analyze
+    </button>
+    <div class="error" id="g-error"></div>
+  </div>
+
+  <!-- Results -->
+  <div id="results">
+    <div class="results-top">
+      <div class="results-title">Results</div>
+      <div class="results-meta" id="r-meta"></div>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-label">Numbers analyzed</div>
+        <div class="stat-value" id="r-count">—</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Numeric base</div>
+        <div class="stat-value" id="r-base">—</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Benford fit</div>
+        <div class="stat-value" id="r-fit">—</div>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="legend">
+        <div class="legend-item">
+          <div class="legend-dot" style="background: var(--blue)"></div>
+          Observed %
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background: var(--text3)"></div>
+          Benford expected %
+        </div>
+      </div>
+      <div class="chart-inner">
+        <canvas id="chart" height="240"></canvas>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr>
+            <th>Digit</th>
+            <th>Count</th>
+            <th>Observed</th>
+            <th>Expected</th>
+            <th>Diff</th>
+            <th>Distribution</th>
+          </tr>
+        </thead>
+        <tbody id="r-table"></tbody>
+      </table>
+    </div>
+
+    <!-- Number list section -->
+    <div class="data-section" id="data-section" style="display:none">
+      <div class="data-toolbar">
+        <div class="data-label" id="data-label">Generated numbers</div>
+        <div class="data-actions">
+          <button class="btn-secondary" onclick="toggleList()" id="list-toggle-btn">Show list</button>
+          <button class="btn-secondary" onclick="downloadNumbers()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download .txt
+          </button>
+        </div>
+      </div>
+      <div class="data-list-wrap" id="data-list"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let chartInst = null;
+let lastNumbers = [];
+
+function ri(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; }
+
+function getBase(sel, custom) {
+  const v = document.getElementById(sel).value;
+  if (v === 'custom') {
+    const c = parseInt(document.getElementById(custom).value);
+    return (!isNaN(c) && c >= 2 && c <= 36) ? c : null;
+  }
+  return parseInt(v);
+}
+
+function toggleCustomBase(prefix) {
+  const sel = document.getElementById(prefix + '-base').value;
+  document.getElementById(prefix + '-custom-wrap').style.display = sel === 'custom' ? 'flex' : 'none';
+}
+
+function switchMode(mode) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', (mode === 'manual' && i === 0) || (mode === 'generated' && i === 1));
+  });
+  document.getElementById('panel-manual').classList.toggle('active', mode === 'manual');
+  document.getElementById('panel-generated').classList.toggle('active', mode === 'generated');
+}
+
+function updateOpFields() {
+  const op = document.getElementById('g-op').value;
+  ['add','subtract','multiply','divide','exponent','root','log'].forEach(o => {
+    document.getElementById('op-' + o).style.display = o === op ? 'grid' : 'none';
+  });
+}
+
+function showErr(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.classList.add('visible');
+}
+
+function clearErr(id) { document.getElementById(id).classList.remove('visible'); }
+
+function toBaseStr(n, base) {
+  return Math.abs(Math.floor(n)).toString(base).toUpperCase();
+}
+
+function leadingDigit(n, base) {
+  const s = toBaseStr(n, base);
+  if (!s || s === '0') return null;
+  const d = parseInt(s[0], base);
+  return d >= 1 ? d : null;
+}
+
+function benford(d, base) {
+  return Math.log(1 + 1 / d) / Math.log(base);
+}
+
+function analyze(nums, base, label) {
+  const digits = Array.from({length: base - 1}, (_, i) => i + 1);
+  const counts = {};
+  digits.forEach(d => (counts[d] = 0));
+  let valid = 0;
+
+  for (const n of nums) {
+    const d = leadingDigit(n, base);
+    if (d !== null && d >= 1 && d < base) { counts[d]++; valid++; }
+  }
+
+  if (!valid) return false;
+
+  const rows = digits.map(d => ({
+    digit: d,
+    count: counts[d],
+    obs: counts[d] / valid,
+    exp: benford(d, base),
+  }));
+
+  const mad = rows.reduce((s, r) => s + Math.abs(r.obs - r.exp), 0) / rows.length;
+  render(rows, valid, base, mad, label);
+  return true;
+}
+
+function render(rows, total, base, mad, label) {
+  document.getElementById('r-count').textContent = total.toLocaleString();
+  document.getElementById('r-base').textContent = base;
+  document.getElementById('r-meta').textContent = label;
+
+  const fitPct = Math.max(0, 100 - mad * 500).toFixed(1) + '%';
+  const fitEl = document.getElementById('r-fit');
+  fitEl.textContent = fitPct;
+  fitEl.className = 'stat-value ' + (mad < 0.015 ? 'good' : mad < 0.04 ? 'warn' : 'poor');
+
+  const labels = rows.map(r => r.digit.toString(base).toUpperCase());
+  const obsData = rows.map(r => parseFloat((r.obs * 100).toFixed(2)));
+  const expData = rows.map(r => parseFloat((r.exp * 100).toFixed(2)));
+
+  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+  const tickColor = isDark ? '#5c5a56' : '#a09e9a';
+  const blueColor = isDark ? '#60a5fa' : '#2563eb';
+  const grayColor = isDark ? '#5c5a56' : '#d1d0cc';
+
+  document.querySelector('.chart-inner').style.minWidth = Math.max(360, rows.length * 44) + 'px';
+
+  if (chartInst) chartInst.destroy();
+  chartInst = new Chart(document.getElementById('chart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Observed %',
+          data: obsData,
+          backgroundColor: blueColor + 'cc',
+          borderColor: blueColor,
+          borderWidth: 1,
+          borderRadius: 3,
+        },
+        {
+          label: "Benford's expected %",
+          data: expData,
+          backgroundColor: grayColor + '88',
+          borderColor: grayColor,
+          borderWidth: 1,
+          borderRadius: 3,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: isDark ? '#1c1b1a' : '#fff',
+          borderColor: isDark ? '#2e2d2a' : '#e5e4e0',
+          borderWidth: 1,
+          titleColor: isDark ? '#f0efe9' : '#1a1917',
+          bodyColor: isDark ? '#9b9890' : '#6b6860',
+          titleFont: { family: 'Inter', size: 12, weight: '500' },
+          bodyFont: { family: 'Inter', size: 11 },
+          callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)}%` }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: tickColor, font: { family: 'Inter', size: 11 } },
+          grid: { color: gridColor },
+          title: { display: true, text: `Leading digit (base ${base})`, color: tickColor, font: { family: 'Inter', size: 11 } }
+        },
+        y: {
+          ticks: { color: tickColor, font: { family: 'Inter', size: 11 }, callback: v => v + '%' },
+          grid: { color: gridColor },
+          title: { display: true, text: 'Frequency %', color: tickColor, font: { family: 'Inter', size: 11 } }
+        }
+      }
+    }
+  });
+
+  const tbody = document.getElementById('r-table');
+  tbody.innerHTML = '';
+  const maxObs = Math.max(...rows.map(r => r.obs));
+
+  rows.forEach(r => {
+    const diff = r.obs - r.exp;
+    const dPct = (diff * 100).toFixed(2);
+    const cls = Math.abs(diff) < 0.005 ? 'diff-near' : diff > 0 ? 'diff-over' : 'diff-under';
+    const dLabel = Math.abs(diff) < 0.005 ? '≈ 0%' : (diff > 0 ? '+' : '') + dPct + '%';
+    const wObs = ((r.obs / maxObs) * 100).toFixed(1);
+    const wExp = ((r.exp / maxObs) * 100).toFixed(1);
+    const digitStr = r.digit.toString(base).toUpperCase();
+
+    tbody.innerHTML += `<tr>
+      <td class="td-digit">${digitStr}</td>
+      <td>${r.count.toLocaleString()}</td>
+      <td>${(r.obs * 100).toFixed(2)}%</td>
+      <td style="color: var(--text2)">${(r.exp * 100).toFixed(2)}%</td>
+      <td class="${cls}">${dLabel}</td>
+      <td>
+        <div class="bars">
+          <div class="bar-row"><div class="bar-track"><div class="bar-fill bar-actual" style="width:${wObs}%"></div></div></div>
+          <div class="bar-row"><div class="bar-track"><div class="bar-fill bar-benford" style="width:${wExp}%"></div></div></div>
+        </div>
+      </td>
+    </tr>`;
+  });
+
+  document.getElementById('results').classList.add('visible');
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── Number list helpers ───────────────────────────────────────────────────────
+
+function setNumberList(nums, label) {
+  lastNumbers = nums;
+  const section = document.getElementById('data-section');
+  section.style.display = 'block';
+  document.getElementById('data-label').textContent = label + ' — ' + nums.length.toLocaleString() + ' numbers';
+  document.getElementById('data-list').classList.remove('visible');
+  document.getElementById('list-toggle-btn').textContent = 'Show list';
+}
+
+function toggleList() {
+  const wrap = document.getElementById('data-list');
+  const btn = document.getElementById('list-toggle-btn');
+  const showing = wrap.classList.contains('visible');
+  if (!showing) {
+    wrap.textContent = lastNumbers.join('  ');
+    wrap.classList.add('visible');
+    btn.textContent = 'Hide list';
+  } else {
+    wrap.classList.remove('visible');
+    btn.textContent = 'Show list';
+  }
+}
+
+function downloadNumbers() {
+  if (!lastNumbers.length) return;
+  const blob = new Blob([lastNumbers.join('\n')], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'benfords_numbers.txt';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ── Manual mode ───────────────────────────────────────────────────────────────
+
+function runManual() {
+  clearErr('m-error');
+  const raw = document.getElementById('m-nums').value;
+  let nums = raw.trim().split(/[\s,\n]+/).filter(Boolean)
+    .map(t => parseFloat(t)).filter(n => !isNaN(n) && isFinite(n) && n > 0);
+
+  if (nums.length < 5) { showErr('m-error', 'Enter at least 5 valid positive numbers.'); return; }
+
+  const scalar = parseFloat(document.getElementById('m-scalar').value) || 1;
+  if (scalar !== 1) nums = nums.map(n => n * scalar);
+
+  const base = getBase('m-base', 'm-custom-base');
+  if (!base) { showErr('m-error', 'Invalid base — must be 2 to 36.'); return; }
+
+  if (!analyze(nums, base, nums.length.toLocaleString() + ' numbers · base ' + base)) {
+    showErr('m-error', 'No valid leading digits found. Try a different base or dataset.');
+    return;
+  }
+
+  setNumberList(nums, 'Input numbers');
+}
+
+// ── Generated mode ────────────────────────────────────────────────────────────
+
+function runGenerated() {
+  clearErr('g-error');
+  const min = parseInt(document.getElementById('g-min').value);
+  const max = parseInt(document.getElementById('g-max').value);
+  const count = parseInt(document.getElementById('g-count').value);
+  const op = document.getElementById('g-op').value;
+  const base = getBase('g-base', 'g-custom-base');
+
+  if (isNaN(min) || isNaN(max) || min < 1 || max <= min) { showErr('g-error', 'Invalid range. Min must be ≥ 1 and less than max.'); return; }
+  if (isNaN(count) || count < 10 || count > 100000) { showErr('g-error', 'Count must be between 10 and 100,000.'); return; }
+  if (!base) { showErr('g-error', 'Invalid base — must be 2 to 36.'); return; }
+
+  const loading = document.getElementById('g-loading');
+  loading.classList.add('visible');
+
+  setTimeout(() => {
+    try {
+      const nums = generateNums(count, min, max, op);
+      loading.classList.remove('visible');
+      if (!nums || nums.length < 5) { showErr('g-error', 'Could not generate enough valid numbers. Try a wider range.'); return; }
+
+      if (!analyze(nums, base, nums.length.toLocaleString() + ' numbers · ' + op + ' · base ' + base)) {
+        showErr('g-error', 'No valid leading digits found with these settings.');
+        return;
+      }
+
+      setNumberList(nums, 'Generated numbers (' + op + ')');
+    } catch(e) {
+      loading.classList.remove('visible');
+      showErr('g-error', 'Error: ' + e.message);
+    }
+  }, 20);
+}
+
+function iv(id) { return parseInt(document.getElementById(id).value) || 0; }
+
+function generateNums(count, min, max, op) {
+  const out = [];
+  let tries = 0;
+  const limit = count * 25;
+
+  while (out.length < count && tries < limit) {
+    tries++;
+    let v;
+    try {
+      if (op === 'none') {
+        v = ri(min, max);
+      } else if (op === 'add') {
+        const n = ri(Math.max(1, iv('add-lo')), Math.max(1, iv('add-hi')));
+        v = 0; for (let i = 0; i < n; i++) v += ri(min, max);
+      } else if (op === 'subtract') {
+        const n = ri(Math.max(1, iv('sub-lo')), Math.max(1, iv('sub-hi')));
+        v = ri(min, max); for (let i = 0; i < n; i++) v -= ri(min, max);
+      } else if (op === 'multiply') {
+        const n = ri(Math.max(1, iv('mul-lo')), Math.max(1, iv('mul-hi')));
+        v = 1; for (let i = 0; i < n; i++) v *= ri(min, max);
+      } else if (op === 'divide') {
+        const n = ri(Math.max(1, iv('div-lo')), Math.max(1, iv('div-hi')));
+        const vlo = Math.max(1, iv('div-vlo')), vhi = Math.max(vlo, iv('div-vhi'));
+        v = ri(min, max);
+        for (let i = 0; i < n; i++) { const d = ri(vlo, vhi); if (d) v /= d; }
+        v = Math.floor(v);
+      } else if (op === 'exponent') {
+        v = Math.pow(ri(min, max), ri(Math.max(1, iv('exp-lo')), Math.max(1, iv('exp-hi'))));
+      } else if (op === 'root') {
+        const r = ri(Math.max(1, iv('root-lo')), Math.max(1, iv('root-hi')));
+        v = Math.floor(Math.pow(ri(min, max), 1 / r));
+      } else if (op === 'log') {
+        const lb = ri(Math.max(2, iv('log-lo')), Math.max(2, iv('log-hi')));
+        v = Math.round(Math.log(ri(min, max)) / Math.log(lb));
+      }
+    } catch(e) { continue; }
+
+    if (v !== undefined && isFinite(v) && v >= 1) out.push(Math.floor(v));
+  }
+  return out;
+}
+</script>
+</body>
+</html>
