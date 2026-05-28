@@ -190,6 +190,11 @@ tr:hover td { background: var(--bg3); }
 /* Repeat badge */
 .repeat-note { display: inline-block; margin-left: 6px; font-size: 11px; color: var(--text3); font-family: var(--font); font-weight: 400; }
 
+/* Op description */
+.op-desc { background: var(--bg2); border: 1px solid var(--border); border-radius: 7px; padding: 10px 13px; font-size: 12px; color: var(--text2); line-height: 1.65; margin-bottom: 12px; display: none; }
+.op-desc.visible { display: block; }
+.op-desc strong { font-weight: 500; color: var(--text); }
+
 @media (max-width: 820px) {
   .layout { grid-template-columns: 1fr; }
   .config-panel { position: static; }
@@ -272,9 +277,9 @@ tr:hover td { background: var(--bg3); }
       <!-- Generated panel -->
       <div id="panel-generated" class="panel">
         <div class="field-row triple">
-          <div class="field" style="margin:0"><label>Min</label><input type="number" id="g-min" value="1" min="1"></div>
-          <div class="field" style="margin:0"><label>Max</label><input type="number" id="g-max" value="10000"></div>
-          <div class="field" style="margin:0"><label>Count</label><input type="number" id="g-count" value="1000" min="10" max="100000"></div>
+          <div class="field" style="margin:0"><label>Min</label><input type="number" id="g-min" value="1" min="1" oninput="updateOpDesc()"></div>
+          <div class="field" style="margin:0"><label>Max</label><input type="number" id="g-max" value="10000" oninput="updateOpDesc()"></div>
+          <div class="field" style="margin:0"><label>Count</label><input type="number" id="g-count" value="1000" min="10" max="100000" oninput="updateRepeatCap(); updateOpDesc()"></div>
         </div>
 
         <div class="field-row">
@@ -309,46 +314,49 @@ tr:hover td { background: var(--bg3); }
 
         <!-- Op-specific fields -->
         <div class="field-row" id="op-add" style="display:none">
-          <div class="field" style="margin:0"><label>Min addends</label><input type="number" id="add-lo" value="2" min="1"></div>
-          <div class="field" style="margin:0"><label>Max addends</label><input type="number" id="add-hi" value="5" min="1"></div>
+          <div class="field" style="margin:0"><label>Min addends</label><input type="number" id="add-lo" value="2" min="1" oninput="updateOpDesc()"></div>
+          <div class="field" style="margin:0"><label>Max addends</label><input type="number" id="add-hi" value="5" min="1" oninput="updateOpDesc()"></div>
         </div>
         <div class="field-row" id="op-subtract" style="display:none">
-          <div class="field" style="margin:0"><label>Min subtrahends</label><input type="number" id="sub-lo" value="1" min="1"></div>
-          <div class="field" style="margin:0"><label>Max subtrahends</label><input type="number" id="sub-hi" value="3" min="1"></div>
+          <div class="field" style="margin:0"><label>Min subtrahends</label><input type="number" id="sub-lo" value="1" min="1" oninput="updateOpDesc()"></div>
+          <div class="field" style="margin:0"><label>Max subtrahends</label><input type="number" id="sub-hi" value="3" min="1" oninput="updateOpDesc()"></div>
         </div>
         <div class="field-row" id="op-multiply" style="display:none">
-          <div class="field" style="margin:0"><label>Min factors</label><input type="number" id="mul-lo" value="2" min="1"></div>
-          <div class="field" style="margin:0"><label>Max factors</label><input type="number" id="mul-hi" value="10" min="1"></div>
+          <div class="field" style="margin:0"><label>Min factors</label><input type="number" id="mul-lo" value="2" min="1" oninput="updateOpDesc()"></div>
+          <div class="field" style="margin:0"><label>Max factors</label><input type="number" id="mul-hi" value="10" min="1" oninput="updateOpDesc()"></div>
         </div>
         <div style="display:none" id="op-divide">
           <div class="field-row">
-            <div class="field" style="margin:0"><label>Min divisors</label><input type="number" id="div-lo" value="1" min="1"></div>
-            <div class="field" style="margin:0"><label>Max divisors</label><input type="number" id="div-hi" value="3" min="1"></div>
+            <div class="field" style="margin:0"><label>Min divisors</label><input type="number" id="div-lo" value="1" min="1" oninput="updateOpDesc()"></div>
+            <div class="field" style="margin:0"><label>Max divisors</label><input type="number" id="div-hi" value="3" min="1" oninput="updateOpDesc()"></div>
           </div>
           <div class="field-row" style="margin-top:10px">
-            <div class="field" style="margin:0"><label>Divisor min value</label><input type="number" id="div-vlo" value="2" min="1"></div>
-            <div class="field" style="margin:0"><label>Divisor max value</label><input type="number" id="div-vhi" value="9" min="1"></div>
+            <div class="field" style="margin:0"><label>Divisor min value</label><input type="number" id="div-vlo" value="2" min="1" oninput="updateOpDesc()"></div>
+            <div class="field" style="margin:0"><label>Divisor max value</label><input type="number" id="div-vhi" value="9" min="1" oninput="updateOpDesc()"></div>
           </div>
         </div>
         <div class="field-row" id="op-exponent" style="display:none">
-          <div class="field" style="margin:0"><label>Min exponent</label><input type="number" id="exp-lo" value="2" min="1"></div>
-          <div class="field" style="margin:0"><label>Max exponent</label><input type="number" id="exp-hi" value="6" min="1"></div>
+          <div class="field" style="margin:0"><label>Min exponent</label><input type="number" id="exp-lo" value="2" min="1" oninput="updateOpDesc()"></div>
+          <div class="field" style="margin:0"><label>Max exponent</label><input type="number" id="exp-hi" value="6" min="1" oninput="updateOpDesc()"></div>
         </div>
         <div class="field-row" id="op-root" style="display:none">
-          <div class="field" style="margin:0"><label>Min root</label><input type="number" id="root-lo" value="2" min="1"></div>
-          <div class="field" style="margin:0"><label>Max root</label><input type="number" id="root-hi" value="5" min="1"></div>
+          <div class="field" style="margin:0"><label>Min root</label><input type="number" id="root-lo" value="2" min="1" oninput="updateOpDesc()"></div>
+          <div class="field" style="margin:0"><label>Max root</label><input type="number" id="root-hi" value="5" min="1" oninput="updateOpDesc()"></div>
         </div>
         <div class="field-row" id="op-log" style="display:none">
-          <div class="field" style="margin:0"><label>Min log base</label><input type="number" id="log-lo" value="2" min="2"></div>
-          <div class="field" style="margin:0"><label>Max log base</label><input type="number" id="log-hi" value="10" min="2"></div>
+          <div class="field" style="margin:0"><label>Min log base</label><input type="number" id="log-lo" value="2" min="2" oninput="updateOpDesc()"></div>
+          <div class="field" style="margin:0"><label>Max log base</label><input type="number" id="log-hi" value="10" min="2" oninput="updateOpDesc()"></div>
         </div>
+
+        <!-- Operation description -->
+        <div class="op-desc" id="op-desc"></div>
 
         <hr class="form-divider">
 
         <div class="field">
-          <label>Repeat & average runs (max 100)</label>
+          <label id="repeat-label">Repeat & average runs (max 100)</label>
           <input type="number" id="g-repeat" value="1" min="1" max="100" placeholder="1 = single run">
-          <span style="font-size:11px; color:var(--text3); margin-top:4px;">Run the generation N times and average the digit percentages across all runs.</span>
+          <span style="font-size:11px; color:var(--text3); margin-top:4px;">Run N times and average digit percentages. Max runs scales down automatically for large counts to keep performance reasonable.</span>
         </div>
 
         <div class="loading" id="g-loading"><div class="spinner"></div> <span id="g-loading-text">Generating numbers…</span></div>
@@ -444,6 +452,89 @@ function updateOpFields() {
   ['add','subtract','multiply','divide','exponent','root','log'].forEach(o =>
     document.getElementById('op-' + o).style.display = o === op ? (o === 'divide' ? 'block' : 'grid') : 'none'
   );
+  updateOpDesc();
+}
+
+// ── Dynamic repeat cap ────────────────────────────────────────────────────────
+// Budget: count × repeat ≤ 1,000,000  (cap still hard-limited to 100)
+
+const WORK_BUDGET = 1_000_000;
+
+function getRepeatCap() {
+  const count = Math.max(10, parseInt(document.getElementById('g-count').value) || 1000);
+  return Math.min(100, Math.max(1, Math.floor(WORK_BUDGET / count)));
+}
+
+function updateRepeatCap() {
+  const cap = getRepeatCap();
+  document.getElementById('repeat-label').textContent = 'Repeat & average runs (max ' + cap + ')';
+  const el = document.getElementById('g-repeat');
+  el.max = cap;
+  if (parseInt(el.value) > cap) el.value = cap;
+}
+
+// ── Operation description ─────────────────────────────────────────────────────
+
+function gv(id) { return document.getElementById(id).value || '?'; }
+
+function updateOpDesc() {
+  const op = document.getElementById('g-op').value;
+  const mn = gv('g-min'), mx = gv('g-max'), cnt = gv('g-count');
+  const el = document.getElementById('op-desc');
+
+  const range = `<strong>${mn}–${mx}</strong>`;
+  const count = `<strong>${cnt}</strong>`;
+
+  const descs = {
+    none: `Generates ${count} independent random integers, each drawn uniformly from ${range}. No arithmetic is applied — this is a pure baseline to show that random numbers do <em>not</em> follow Benford's Law.`,
+
+    add: () => {
+      const lo = gv('add-lo'), hi = gv('add-hi');
+      const n = lo === hi ? `<strong>${lo}</strong>` : `a random N between <strong>${lo}</strong> and <strong>${hi}</strong>`;
+      return `Each of the ${count} data points is the <strong>sum</strong> of ${n} random integers from ${range}. Example: if N=3 and range is 1–100, one result might be 47 + 82 + 13 = <strong>142</strong>.`;
+    },
+
+    subtract: () => {
+      const lo = gv('sub-lo'), hi = gv('sub-hi');
+      const n = lo === hi ? `<strong>${lo}</strong>` : `a random N between <strong>${lo}</strong> and <strong>${hi}</strong>`;
+      return `Each of the ${count} data points starts as a random integer from ${range}, then subtracts ${n} additional random values from the same range. Results that go negative or zero are discarded and regenerated. Example: 850 − 340 − 210 = <strong>300</strong>.`;
+    },
+
+    multiply: () => {
+      const lo = gv('mul-lo'), hi = gv('mul-hi');
+      const n = lo === hi ? `<strong>${lo}</strong>` : `a random N between <strong>${lo}</strong> and <strong>${hi}</strong>`;
+      return `Each of the ${count} data points is the <strong>product</strong> of ${n} random integers from ${range}. Multiplying many numbers together strongly pushes distributions toward Benford's Law. Example: 12 × 7 × 43 = <strong>3,612</strong>.`;
+    },
+
+    divide: () => {
+      const lo = gv('div-lo'), hi = gv('div-hi');
+      const vlo = gv('div-vlo'), vhi = gv('div-vhi');
+      const n = lo === hi ? `<strong>${lo}</strong>` : `<strong>${lo}–${hi}</strong>`;
+      return `Each of the ${count} data points starts as a random integer from ${range}, then is divided by ${n} random divisors chosen between <strong>${vlo}</strong> and <strong>${vhi}</strong>. The result is floored to an integer. Example: 9400 ÷ 4 ÷ 7 = <strong>335</strong>.`;
+    },
+
+    exponent: () => {
+      const lo = gv('exp-lo'), hi = gv('exp-hi');
+      const e = lo === hi ? `<strong>${lo}</strong>` : `a random exponent between <strong>${lo}</strong> and <strong>${hi}</strong>`;
+      return `Each of the ${count} data points is a random integer from ${range} raised to ${e}. Exponentiation produces very wide-ranging values that strongly follow Benford's Law. Example: 14<sup>${lo}</sup> = <strong>${Math.pow(14, parseInt(lo)).toLocaleString()}</strong>.`;
+    },
+
+    root: () => {
+      const lo = gv('root-lo'), hi = gv('root-hi');
+      const r = lo === hi ? `the <strong>${lo}</strong>th root` : `a random root between the <strong>${lo}</strong>th and <strong>${hi}</strong>th`;
+      return `Each of the ${count} data points is ${r} of a random integer from ${range} — equivalent to raising it to the power of 1/N. The result is floored to an integer. Example: ∛8000 = <strong>20</strong>.`;
+    },
+
+    log: () => {
+      const lo = gv('log-lo'), hi = gv('log-hi');
+      const b = lo === hi ? `base <strong>${lo}</strong>` : `a random base between <strong>${lo}</strong> and <strong>${hi}</strong>`;
+      return `Each of the ${count} data points is the logarithm of a random integer from ${range} using ${b}, rounded to the nearest integer. Logarithms compress large ranges into small ones. Example: log<sub>10</sub>(5000) ≈ <strong>4</strong>.`;
+    },
+  };
+
+  const desc = typeof descs[op] === 'function' ? descs[op]() : descs[op];
+  if (desc) { el.innerHTML = desc; el.classList.add('visible'); }
+  else { el.classList.remove('visible'); }
 }
 
 function showErr(id, msg) { const e = document.getElementById(id); e.textContent = msg; e.classList.add('visible'); }
@@ -663,7 +754,7 @@ function runGenerated() {
   const count = parseInt(document.getElementById('g-count').value);
   const op = document.getElementById('g-op').value;
   const base = getBase('g-base', 'g-custom-base');
-  const repeat = Math.min(100, Math.max(1, parseInt(document.getElementById('g-repeat').value) || 1));
+  const repeat = Math.min(getRepeatCap(), Math.max(1, parseInt(document.getElementById('g-repeat').value) || 1));
 
   if (isNaN(min) || isNaN(max) || min < 1 || max <= min) { showErr('g-error', 'Invalid range. Min ≥ 1 and less than max.'); return; }
   if (isNaN(count) || count < 10 || count > 100000) { showErr('g-error', 'Count must be between 10 and 100,000.'); return; }
@@ -795,6 +886,10 @@ function downloadNumbers() {
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
   a.download = 'benfords_numbers.txt'; a.click(); URL.revokeObjectURL(a.href);
 }
+
+// Init on load
+updateRepeatCap();
+updateOpDesc();
 </script>
 </body>
 </html>
